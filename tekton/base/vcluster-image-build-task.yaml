@@ -58,6 +58,7 @@ spec:
         buildah bud \
           --storage-driver="${STORAGE_DRIVER}" \
           --isolation="${BUILDAH_ISOLATION}" \
+          --userns=host \
           --format=oci \
           --build-arg TARGETOS=linux \
           --build-arg TARGETARCH=amd64 \
