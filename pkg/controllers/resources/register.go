@@ -36,6 +36,7 @@ import (
 	gatewayapiutil "github.com/loft-sh/vcluster/pkg/util/gatewayapi"
 	"github.com/loft-sh/vcluster/pkg/util/loghelper"
 	"github.com/pkg/errors"
+	"k8s.io/klog/v2"
 )
 
 // ExtraControllers that will be started as well
@@ -46,6 +47,14 @@ type BuildController func(ctx *synccontext.RegisterContext) (syncertypes.Object,
 
 // getSyncers retrieves all syncers that should get created
 func getSyncers(ctx *synccontext.RegisterContext) []BuildController {
+	csiStorageCapacitiesEnabled := ctx.Config.Sync.FromHost.CSIStorageCapacities.Enabled == "true"
+	klog.Infof("CSI syncer registration: csinodes=%q csidrivers=%q csistoragecapacities=%q capacity_constructor_enabled=%t",
+		ctx.Config.Sync.FromHost.CSINodes.Enabled,
+		ctx.Config.Sync.FromHost.CSIDrivers.Enabled,
+		ctx.Config.Sync.FromHost.CSIStorageCapacities.Enabled,
+		csiStorageCapacitiesEnabled,
+	)
+
 	return append([]BuildController{
 		isEnabled(ctx.Config.Sync.ToHost.Services.Enabled, services.New),
 		isEnabled(ctx.Config.Sync.ToHost.ConfigMaps.Enabled, configmaps.New),
@@ -75,7 +84,7 @@ func getSyncers(ctx *synccontext.RegisterContext) []BuildController {
 		isEnabled(ctx.Config.Sync.ToHost.ServiceAccounts.Enabled, serviceaccounts.New),
 		isEnabled(ctx.Config.Sync.FromHost.CSINodes.Enabled == "true", csinodes.New),
 		isEnabled(ctx.Config.Sync.FromHost.CSIDrivers.Enabled == "true", csidrivers.New),
-		isEnabled(ctx.Config.Sync.FromHost.CSIStorageCapacities.Enabled == "true", csistoragecapacities.New),
+		isEnabled(csiStorageCapacitiesEnabled, csistoragecapacities.New),
 		isEnabled(ctx.Config.Sync.ToHost.Namespaces.Enabled, namespaces.New),
 		persistentvolumes.New,
 		nodes.New,

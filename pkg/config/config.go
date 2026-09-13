@@ -163,6 +163,20 @@ func (v VirtualClusterConfig) DisableMissingAPIs(discoveryClient discovery.Disco
 	if err != nil && !kerrors.IsNotFound(err) {
 		return err
 	}
+	resourceCount := 0
+	if resources != nil {
+		resourceCount = len(resources.APIResources)
+	}
+	klog.Infof("storage API discovery for CSI syncers: resources_found=%t resource_count=%d csinodes=%t csidrivers=%t csistoragecapacities=%t configured_csinodes=%q configured_csidrivers=%q configured_csistoragecapacities=%q",
+		resources != nil,
+		resourceCount,
+		findResource(resources, "csinodes"),
+		findResource(resources, "csidrivers"),
+		findResource(resources, "csistoragecapacities"),
+		v.Sync.FromHost.CSINodes.Enabled,
+		v.Sync.FromHost.CSIDrivers.Enabled,
+		v.Sync.FromHost.CSIStorageCapacities.Enabled,
+	)
 
 	// check if found
 	if v.Sync.FromHost.CSINodes.Enabled != "false" && !findResource(resources, "csinodes") {
