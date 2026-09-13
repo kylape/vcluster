@@ -35,7 +35,7 @@ spec:
       image: quay.io/buildah/stable:v1.39.3
       securityContext:
         privileged: true
-      workingDir: $(workspaces.source.path)/source
+      workingDir: $(workspaces.source.path)
       env:
         - name: HOME
           value: /tekton/home
@@ -56,6 +56,7 @@ spec:
         image="$(params.image)"
         registry="${image%%/*}"
         export REGISTRY_AUTH_FILE="${authfile}"
+        cd source
         buildah login --authfile "${authfile}" "${registry}"
         buildah bud \
           --storage-driver="${STORAGE_DRIVER}" \
