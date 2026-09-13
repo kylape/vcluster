@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - vcluster-buildah-security.yaml
+  - vcluster-image-build-task.yaml
+  - vcluster-image-build-pipeline.yaml
