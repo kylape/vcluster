@@ -3,5 +3,7 @@ kind: Kustomization
 
 resources:
   - product-buildah-task.yaml
+  - vcluster-image-build-product-pipeline.yaml
+  - vcluster-image-build-product-pipelinerun.yaml
   - vcluster-image-build-task.yaml
   - vcluster-image-build-pipeline.yaml
