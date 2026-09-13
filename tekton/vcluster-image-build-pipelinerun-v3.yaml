@@ -6,8 +6,7 @@ spec:
   pipelineRef:
     name: vcluster-image-build
   taskRunTemplate:
-    podTemplate:
-      hostUsers: false
+    serviceAccountName: vcluster-buildah
   params:
     - name: revision
       value: codex/csi-capacity-tracing
