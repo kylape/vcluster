@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: vcluster-image-build-csi-capacity-debug-v7
+  name: vcluster-image-build-csi-capacity-debug-v8
 spec:
   pipelineRef:
     name: vcluster-image-build
