@@ -1,5 +1,5 @@
 # Build program
-FROM golang:1.26 AS builder
+FROM docker.io/library/golang:1.26 AS builder
 
 WORKDIR /vcluster-dev
 ARG TARGETOS
@@ -51,7 +51,7 @@ RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
 ENTRYPOINT ["go", "run", "-mod", "vendor", "cmd/vcluster/main.go", "start"]
 
 # we use alpine for easier debugging
-FROM alpine:3.24
+FROM docker.io/library/alpine:3.24
 
 # install runtime dependencies
 RUN apk upgrade --no-cache zlib && apk add --no-cache ca-certificates zstd tzdata
