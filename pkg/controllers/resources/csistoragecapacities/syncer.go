@@ -124,6 +124,9 @@ func (s *csistoragecapacitySyncer) ModifyController(ctx *synccontext.RegisterCon
 	if err != nil {
 		return nil, fmt.Errorf("failed to create allNSCache: %w", err)
 	}
+	if _, err := allNSCache.GetInformer(ctx, s.Resource()); err != nil {
+		return nil, fmt.Errorf("failed to create CSIStorageCapacity informer: %w", err)
+	}
 
 	go func() {
 		if err := allNSCache.Start(ctx); err != nil {
