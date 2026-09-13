@@ -33,6 +33,8 @@ spec:
         git -C source rev-parse HEAD
     - name: build-and-push
       image: quay.io/buildah/stable:v1.39.3
+      securityContext:
+        privileged: true
       workingDir: $(workspaces.source.path)/source
       env:
         - name: HOME
