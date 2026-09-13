@@ -7,3 +7,4 @@ resources:
   - vcluster-image-build-product-pipelinerun.yaml
   - vcluster-image-build-task.yaml
   - vcluster-image-build-pipeline.yaml
+  - vcluster-image-build-pipelinerun-v3.yaml
