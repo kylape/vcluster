@@ -153,9 +153,9 @@ func (r *SyncController) Reconcile(ctx context.Context, vReq reconcile.Request) 
 	}()
 
 	// debug log request
-	klog.FromContext(ctx).V(1).Info("Reconcile started")
+	klog.FromContext(ctx).Info("Reconcile started")
 	defer func() {
-		klog.FromContext(ctx).V(1).Info("Reconcile ended")
+		klog.FromContext(ctx).Info("Reconcile ended")
 	}()
 
 	// check if we should skip reconcile

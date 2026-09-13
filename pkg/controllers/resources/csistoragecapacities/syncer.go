@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -60,10 +61,13 @@ func (s *csistoragecapacitySyncer) Syncer() syncertypes.Sync[client.Object] {
 }
 
 func (s *csistoragecapacitySyncer) SyncToVirtual(ctx *synccontext.SyncContext, event *synccontext.SyncToVirtualEvent[*storagev1.CSIStorageCapacity]) (ctrl.Result, error) {
+	klog.Infof("CSIStorageCapacity SyncToVirtual: host=%s/%s storageClass=%s", event.Host.Namespace, event.Host.Name, event.Host.StorageClassName)
 	vObj, shouldSkip, err := s.translateBackwards(ctx, event.Host)
 	if err != nil || shouldSkip {
+		ctx.Log.Infof("CSIStorageCapacity skipped: host=%s/%s skip=%t error=%v", event.Host.Namespace, event.Host.Name, shouldSkip, err)
 		return ctrl.Result{}, err
 	}
+	ctx.Log.Infof("CSIStorageCapacity mapped: host=%s/%s guest=%s/%s storageClass=%s", event.Host.Namespace, event.Host.Name, vObj.Namespace, vObj.Name, vObj.StorageClassName)
 
 	// Apply pro patches
 	err = pro.ApplyPatchesVirtualObject(ctx, nil, vObj, event.Host, ctx.Config.Sync.FromHost.CSIStorageCapacities.Patches, true)
@@ -72,7 +76,9 @@ func (s *csistoragecapacitySyncer) SyncToVirtual(ctx *synccontext.SyncContext, e
 	}
 
 	ctx.Log.Infof("create CSIStorageCapacity %s, because it does not exist in virtual cluster", vObj.Name)
-	return ctrl.Result{}, ctx.VirtualClient.Create(ctx, vObj)
+	err = ctx.VirtualClient.Create(ctx, vObj)
+	ctx.Log.Infof("CSIStorageCapacity guest create: guest=%s/%s error=%v", vObj.Namespace, vObj.Name, err)
+	return ctrl.Result{}, err
 }
 
 func (s *csistoragecapacitySyncer) Sync(ctx *synccontext.SyncContext, event *synccontext.SyncEvent[*storagev1.CSIStorageCapacity]) (_ ctrl.Result, retErr error) {
@@ -111,15 +117,26 @@ func (s *csistoragecapacitySyncer) SyncToHost(ctx *synccontext.SyncContext, even
 func (s *csistoragecapacitySyncer) ModifyController(ctx *synccontext.RegisterContext, builder *builder.Builder) (*builder.Builder, error) {
 	// the default cache is configured to look at only the target namespaces, create an event source from
 	// a cache that watches all namespaces
-	allNSCache, err := cache.New(ctx.HostManager.GetConfig(), cache.Options{Mapper: ctx.HostManager.GetRESTMapper()})
+	allNSCache, err := cache.New(ctx.HostManager.GetConfig(), cache.Options{
+		Scheme: ctx.HostManager.GetScheme(),
+		Mapper: ctx.HostManager.GetRESTMapper(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create allNSCache: %w", err)
 	}
-
-	err = ctx.HostManager.Add(allNSCache)
-	if err != nil {
+	if _, err := allNSCache.GetInformer(ctx, s.Resource()); err != nil {
+		return nil, fmt.Errorf("failed to create CSIStorageCapacity informer: %w", err)
+	}
+	if err := ctx.HostManager.Add(allNSCache); err != nil {
 		return nil, fmt.Errorf("failed to add allNSCache to physical manager: %w", err)
 	}
+	hostCapacities := &storagev1.CSIStorageCapacityList{}
+	if err := ctx.HostManager.GetAPIReader().List(ctx, hostCapacities); err != nil {
+		klog.Warningf("CSI capacity direct host list failed after cache registration: %v", err)
+	} else {
+		klog.Infof("CSI capacity direct host list after cache registration: count=%d", len(hostCapacities.Items))
+	}
+	klog.Infof("CSI capacity auxiliary cache added to host manager")
 
 	syncContext := ctx.ToSyncContext("csi storage capacity syncer")
 	return builder.WatchesRawSource(source.Kind(allNSCache, s.Resource(), &handler.Funcs{
@@ -148,6 +165,7 @@ func (s *csistoragecapacitySyncer) enqueuePhysical(ctx *synccontext.SyncContext,
 	}
 
 	name := s.HostToVirtual(ctx, types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj)
+	ctx.Log.Infof("CSIStorageCapacity host cache event: host=%s/%s guest=%s/%s", obj.GetNamespace(), obj.GetName(), name.Namespace, name.Name)
 	if name.Name != "" && name.Namespace != "" {
 		q.Add(reconcile.Request{NamespacedName: name})
 	}

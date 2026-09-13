@@ -1,0 +1,78 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: vcluster-image-build
+spec:
+  description: Build and publish the vCluster image from the checked-out source.
+  params:
+    - name: git-url
+      type: string
+    - name: revision
+      type: string
+      default: main
+    - name: image
+      type: string
+    - name: build-version
+      type: string
+      default: csi-capacity-debug
+  workspaces:
+    - name: source
+    - name: registry-auth
+  results:
+    - name: image-url
+    - name: image-digest
+  steps:
+    - name: clone
+      image: alpine/git:2.47.2
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/sh
+        set -eu
+        rm -rf source
+        git clone --depth=1 --branch "$(params.revision)" "$(params.git-url)" source
+        git -C source rev-parse HEAD
+    - name: build-and-push
+      image: quay.io/buildah/stable:v1.39.3
+      securityContext:
+        privileged: true
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: HOME
+          value: /tekton/home
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: BUILDAH_ISOLATION
+          value: chroot
+      script: |
+        #!/usr/bin/env bash
+        set -Eeuo pipefail
+
+        authfile="$(workspaces.registry-auth.path)/.dockerconfigjson"
+        if [[ ! -s "${authfile}" ]]; then
+          echo "registry-auth workspace must contain .dockerconfigjson" >&2
+          exit 1
+        fi
+
+        image="$(params.image)"
+        registry="${image%%/*}"
+        export REGISTRY_AUTH_FILE="${authfile}"
+        cd source
+        buildah login --authfile "${authfile}" "${registry}"
+        buildah bud \
+          --storage-driver="${STORAGE_DRIVER}" \
+          --isolation="${BUILDAH_ISOLATION}" \
+          --userns=host \
+          --format=oci \
+          --build-arg TARGETOS=linux \
+          --build-arg TARGETARCH=amd64 \
+          --build-arg BUILD_VERSION="$(params.build-version)" \
+          --file Dockerfile \
+          --tag "${image}" \
+          .
+        buildah push \
+          --storage-driver="${STORAGE_DRIVER}" \
+          --authfile "${authfile}" \
+          --digestfile "$(results.image-digest.path)" \
+          "${image}" \
+          "docker://${image}"
+        printf '%s' "${image}" > "$(results.image-url.path)"
