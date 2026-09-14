@@ -9,7 +9,6 @@ import (
 	"github.com/loft-sh/vcluster/pkg/syncer"
 	"github.com/loft-sh/vcluster/pkg/syncer/synccontext"
 	syncertypes "github.com/loft-sh/vcluster/pkg/syncer/types"
-	"github.com/loft-sh/vcluster/pkg/util/osutil"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -127,14 +126,8 @@ func (s *csistoragecapacitySyncer) ModifyController(ctx *synccontext.RegisterCon
 	if _, err := allNSCache.GetInformer(ctx, s.Resource()); err != nil {
 		return nil, fmt.Errorf("failed to create CSIStorageCapacity informer: %w", err)
 	}
-
-	go func() {
-		if err := allNSCache.Start(ctx); err != nil {
-			osutil.Exit(1)
-		}
-	}()
-	if synced := allNSCache.WaitForCacheSync(ctx); !synced {
-		return nil, fmt.Errorf("cache was not synced for CSIStorageCapacity syncer")
+	if err := ctx.HostManager.Add(allNSCache); err != nil {
+		return nil, fmt.Errorf("failed to add allNSCache to physical manager: %w", err)
 	}
 
 	syncContext := ctx.ToSyncContext("csi storage capacity syncer")
