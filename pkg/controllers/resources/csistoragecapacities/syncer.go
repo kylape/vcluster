@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -129,6 +130,13 @@ func (s *csistoragecapacitySyncer) ModifyController(ctx *synccontext.RegisterCon
 	if err := ctx.HostManager.Add(allNSCache); err != nil {
 		return nil, fmt.Errorf("failed to add allNSCache to physical manager: %w", err)
 	}
+	hostCapacities := &storagev1.CSIStorageCapacityList{}
+	if err := ctx.HostManager.GetAPIReader().List(ctx, hostCapacities); err != nil {
+		klog.Warningf("CSI capacity direct host list failed after cache registration: %v", err)
+	} else {
+		klog.Infof("CSI capacity direct host list after cache registration: count=%d", len(hostCapacities.Items))
+	}
+	klog.Infof("CSI capacity auxiliary cache added to host manager")
 
 	syncContext := ctx.ToSyncContext("csi storage capacity syncer")
 	return builder.WatchesRawSource(source.Kind(allNSCache, s.Resource(), &handler.Funcs{
