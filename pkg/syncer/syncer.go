@@ -173,6 +173,16 @@ func (r *SyncController) Reconcile(ctx context.Context, vReq reconcile.Request) 
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+	if r.syncer.Name() == "csistoragecapacity" {
+		klog.FromContext(ctx).Info("CSIStorageCapacity reconcile objects",
+			"virtualFound", vObj != nil,
+			"hostFound", pObj != nil,
+			"virtualOldFound", vObjOld != nil,
+			"hostOldFound", pObjOld != nil,
+			"requestNamespace", vReq.Namespace,
+			"requestName", vReq.Name,
+		)
+	}
 	defer func() {
 		if !res.Requeue && res.RequeueAfter == 0 && retErr == nil { //nolint:staticcheck
 			r.updateObjectCache(vObjOld, vObj, pObjOld, pObj)

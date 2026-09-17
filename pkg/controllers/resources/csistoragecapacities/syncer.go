@@ -61,7 +61,7 @@ func (s *csistoragecapacitySyncer) Syncer() syncertypes.Sync[client.Object] {
 }
 
 func (s *csistoragecapacitySyncer) SyncToVirtual(ctx *synccontext.SyncContext, event *synccontext.SyncToVirtualEvent[*storagev1.CSIStorageCapacity]) (ctrl.Result, error) {
-	klog.Infof("CSIStorageCapacity SyncToVirtual: host=%s/%s storageClass=%s", event.Host.Namespace, event.Host.Name, event.Host.StorageClassName)
+	ctx.Log.Infof("CSIStorageCapacity SyncToVirtual entered: host=%s/%s storageClass=%s", event.Host.Namespace, event.Host.Name, event.Host.StorageClassName)
 	vObj, shouldSkip, err := s.translateBackwards(ctx, event.Host)
 	if err != nil || shouldSkip {
 		ctx.Log.Infof("CSIStorageCapacity skipped: host=%s/%s skip=%t error=%v", event.Host.Namespace, event.Host.Name, shouldSkip, err)
@@ -82,6 +82,7 @@ func (s *csistoragecapacitySyncer) SyncToVirtual(ctx *synccontext.SyncContext, e
 }
 
 func (s *csistoragecapacitySyncer) Sync(ctx *synccontext.SyncContext, event *synccontext.SyncEvent[*storagev1.CSIStorageCapacity]) (_ ctrl.Result, retErr error) {
+	ctx.Log.Infof("CSIStorageCapacity Sync entered: host=%s/%s guest=%s/%s", event.Host.Namespace, event.Host.Name, event.Virtual.Namespace, event.Virtual.Name)
 	patch, err := patcher.NewSyncerPatcher(ctx, event.Host, event.Virtual, patcher.TranslatePatches(ctx.Config.Sync.FromHost.CSIStorageCapacities.Patches, true))
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("new syncer patcher: %w", err)
@@ -110,6 +111,7 @@ func (s *csistoragecapacitySyncer) Sync(ctx *synccontext.SyncContext, event *syn
 }
 
 func (s *csistoragecapacitySyncer) SyncToHost(ctx *synccontext.SyncContext, event *synccontext.SyncToHostEvent[*storagev1.CSIStorageCapacity]) (ctrl.Result, error) {
+	ctx.Log.Infof("CSIStorageCapacity SyncToHost entered: guest=%s/%s", event.Virtual.Namespace, event.Virtual.Name)
 	ctx.Log.Infof("delete virtual CSIStorageCapacity %s, because physical object is missing", event.Virtual.Name)
 	return ctrl.Result{}, ctx.VirtualClient.Delete(ctx, event.Virtual)
 }
