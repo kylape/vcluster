@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	"github.com/loft-sh/vcluster/pkg/syncer/synccontext"
 	"github.com/loft-sh/vcluster/pkg/util"
 	"github.com/loft-sh/vcluster/pkg/util/loghelper"
@@ -14,7 +15,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -141,7 +141,7 @@ func referenceGrant(ctx *synccontext.SyncContext, fromGroup, fromKind, fromNames
 }
 
 func ensureReferenceGrantAllows(ctx *synccontext.SyncContext, fromGroup, fromKind, fromNamespace string, target referenceTarget) error {
-	grants := &gatewayv1.ReferenceGrantList{}
+	grants := &gatewayv1beta1.ReferenceGrantList{}
 	err := ctx.VirtualClient.List(ctx, grants, client.InNamespace(target.namespace))
 	if err != nil {
 		return fmt.Errorf("list ReferenceGrants in namespace %q: %w", target.namespace, err)
@@ -158,7 +158,7 @@ func ensureReferenceGrantAllows(ctx *synccontext.SyncContext, fromGroup, fromKin
 	return notPermittedf("no matching virtual ReferenceGrant in namespace %q permits %s in namespace %q to reference %s %q in namespace %q", target.namespace, fromKind, fromNamespace, target.kind, target.name, target.namespace)
 }
 
-func referenceGrantAllows(grant gatewayv1.ReferenceGrant, fromGroup, fromKind, fromNamespace string, target referenceTarget) bool {
+func referenceGrantAllows(grant gatewayv1beta1.ReferenceGrant, fromGroup, fromKind, fromNamespace string, target referenceTarget) bool {
 	fromAllowed := false
 	for _, from := range grant.Spec.From {
 		if string(from.Group) == fromGroup &&
@@ -328,7 +328,7 @@ func RegisterTLSRouteWatches(ctx *synccontext.RegisterContext, builder *builder.
 	return registerRouteWatches(ctx, builder, listTLSRouteRequests)
 }
 
-var referenceGrantWatchGVK = schema.GroupVersionKind{Group: gatewayv1.GroupVersion.Group, Version: gatewayv1.GroupVersion.Version, Kind: "ReferenceGrant"}
+var referenceGrantWatchGVK = gatewayv1beta1.GroupVersion.WithKind("ReferenceGrant")
 
 func registerRouteWatches(ctx *synccontext.RegisterContext, builder *builder.Builder, listRoutes func(context.Context, client.Client, loghelper.Logger) []reconcile.Request) *builder.Builder {
 	log := ctx.ToSyncContext("gateway-authz").Log
@@ -337,7 +337,7 @@ func registerRouteWatches(ctx *synccontext.RegisterContext, builder *builder.Bui
 	}
 
 	builder = builder.
-		WatchesRawSource(source.Kind(ctx.VirtualManager.GetCache(), &gatewayv1.ReferenceGrant{}, handler.TypedEnqueueRequestsFromMapFunc(func(mapCtx context.Context, _ *gatewayv1.ReferenceGrant) []reconcile.Request {
+		WatchesRawSource(source.Kind(ctx.VirtualManager.GetCache(), &gatewayv1beta1.ReferenceGrant{}, handler.TypedEnqueueRequestsFromMapFunc(func(mapCtx context.Context, _ *gatewayv1beta1.ReferenceGrant) []reconcile.Request {
 			return listRequests(mapCtx)
 		}))).
 		WatchesRawSource(source.Kind(ctx.VirtualManager.GetCache(), &gatewayv1.Gateway{}, handler.TypedEnqueueRequestsFromMapFunc(func(mapCtx context.Context, _ *gatewayv1.Gateway) []reconcile.Request {
@@ -348,7 +348,7 @@ func registerRouteWatches(ctx *synccontext.RegisterContext, builder *builder.Bui
 		})))
 
 	if hostReferenceGrantWatchEnabled(ctx, log) {
-		builder = builder.WatchesRawSource(source.Kind(ctx.HostManager.GetCache(), &gatewayv1.ReferenceGrant{}, handler.TypedEnqueueRequestsFromMapFunc(func(mapCtx context.Context, _ *gatewayv1.ReferenceGrant) []reconcile.Request {
+		builder = builder.WatchesRawSource(source.Kind(ctx.HostManager.GetCache(), &gatewayv1beta1.ReferenceGrant{}, handler.TypedEnqueueRequestsFromMapFunc(func(mapCtx context.Context, _ *gatewayv1beta1.ReferenceGrant) []reconcile.Request {
 			return listRequests(mapCtx)
 		})))
 	}

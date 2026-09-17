@@ -3,14 +3,14 @@ package referencegrants
 import (
 	"fmt"
 
+	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	routetranslate "github.com/loft-sh/vcluster/pkg/controllers/resources/gatewayroutes/translate"
 	"github.com/loft-sh/vcluster/pkg/syncer/synccontext"
 	"github.com/loft-sh/vcluster/pkg/util/translate"
 	"k8s.io/apimachinery/pkg/types"
-	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
-func (s *referenceGrantSyncer) translate(ctx *synccontext.SyncContext, vGrant *gatewayv1.ReferenceGrant) (*gatewayv1.ReferenceGrant, error) {
+func (s *referenceGrantSyncer) translate(ctx *synccontext.SyncContext, vGrant *gatewayv1beta1.ReferenceGrant) (*gatewayv1beta1.ReferenceGrant, error) {
 	pGrant := translate.HostMetadata(vGrant, s.VirtualToHost(ctx, types.NamespacedName{Name: vGrant.Name, Namespace: vGrant.Namespace}, vGrant))
 
 	spec, err := specToHost(ctx, vGrant, true)
@@ -29,11 +29,11 @@ func (s *referenceGrantSyncer) translate(ctx *synccontext.SyncContext, vGrant *g
 // makes the grant effectively a no-op on host because all referrer routes also
 // live there). Each `to[].name`, when set, is translated through the matching
 // kind's mapper using the grant's own namespace as the lookup namespace.
-func specToHost(ctx *synccontext.SyncContext, vGrant *gatewayv1.ReferenceGrant, validateRefs bool) (*gatewayv1.ReferenceGrantSpec, error) {
+func specToHost(ctx *synccontext.SyncContext, vGrant *gatewayv1beta1.ReferenceGrant, validateRefs bool) (*gatewayv1beta1.ReferenceGrantSpec, error) {
 	retSpec := vGrant.Spec.DeepCopy()
 
 	for i := range retSpec.From {
-		retSpec.From[i].Namespace = gatewayv1.Namespace(translate.Default.HostNamespace(ctx, string(retSpec.From[i].Namespace)))
+		retSpec.From[i].Namespace = gatewayv1beta1.Namespace(translate.Default.HostNamespace(ctx, string(retSpec.From[i].Namespace)))
 	}
 
 	for i := range retSpec.To {

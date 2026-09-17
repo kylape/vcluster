@@ -3,6 +3,7 @@ package translate
 import (
 	"fmt"
 
+	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	"github.com/loft-sh/vcluster/pkg/mappings"
 	"github.com/loft-sh/vcluster/pkg/mappings/generic"
 	"github.com/loft-sh/vcluster/pkg/scheme"
@@ -121,7 +122,7 @@ func PolicyTargetRefToHost(ctx *synccontext.SyncContext, policyNamespace string,
 }
 
 // ReferenceGrantToHost translates a ReferenceGrant.spec.to[i] entry name to the host name.
-func ReferenceGrantToHost(ctx *synccontext.SyncContext, grantNamespace string, ref *gatewayv1.ReferenceGrantTo, opts ...ToHostOption) error {
+func ReferenceGrantToHost(ctx *synccontext.SyncContext, grantNamespace string, ref *gatewayv1beta1.ReferenceGrantTo, opts ...ToHostOption) error {
 	if ref.Name == nil || *ref.Name == "" {
 		return nil
 	}
@@ -467,7 +468,7 @@ func policyTargetReferenceGVK(ref *gatewayv1.LocalPolicyTargetReferenceWithSecti
 	return schema.GroupVersionKind{}, unsupportedReferencef("targetRef group %q kind %q is not supported", group, kind)
 }
 
-func referenceGrantToGVK(ref *gatewayv1.ReferenceGrantTo) (schema.GroupVersionKind, error) {
+func referenceGrantToGVK(ref *gatewayv1beta1.ReferenceGrantTo) (schema.GroupVersionKind, error) {
 	group := string(ref.Group)
 	kind := string(ref.Kind)
 

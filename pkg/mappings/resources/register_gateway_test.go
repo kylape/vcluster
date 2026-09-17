@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	pkgconfig "github.com/loft-sh/vcluster/pkg/config"
 	"github.com/loft-sh/vcluster/pkg/mappings"
 	"github.com/loft-sh/vcluster/pkg/scheme"
@@ -22,7 +23,7 @@ func TestReferenceGrantMapperChecksHostCRDWithoutNamespaceSync(t *testing.T) {
 	ctx.Config.Sync.ToHost.GatewayAPI.HTTPRoutes.Enabled = true
 
 	_, err := CreateReferenceGrantMapper(ctx)
-	if err == nil || !strings.Contains(err.Error(), "cannot check host cluster for Gateway API resource gateway.networking.k8s.io/v1, Kind=ReferenceGrant") {
+	if err == nil || !strings.Contains(err.Error(), "cannot check host cluster for Gateway API resource gateway.networking.k8s.io/v1beta1, Kind=ReferenceGrant") {
 		t.Fatalf("expected ReferenceGrant host CRD check before tenant CRD install, got %v", err)
 	}
 }
@@ -35,7 +36,7 @@ func TestGatewayMappersUseLatestVersions(t *testing.T) {
 	if got := mappings.BackendTLSPolicies().GroupVersion(); got != want {
 		t.Fatalf("expected BackendTLSPolicy mapper to use the latest version %s, got %s", want, got)
 	}
-	if got := mappings.ReferenceGrants().GroupVersion(); got != want {
+	if got := mappings.ReferenceGrants().GroupVersion(); got != schema.GroupVersion(gatewayv1beta1.GroupVersion) {
 		t.Fatalf("expected ReferenceGrant mapper to use the latest version %s, got %s", want, got)
 	}
 }

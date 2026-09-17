@@ -3,12 +3,12 @@ package resources
 import (
 	_ "embed"
 
+	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	"github.com/loft-sh/vcluster/pkg/mappings"
 	"github.com/loft-sh/vcluster/pkg/mappings/generic"
 	"github.com/loft-sh/vcluster/pkg/syncer/synccontext"
 	"github.com/loft-sh/vcluster/pkg/util"
 	"github.com/loft-sh/vcluster/pkg/util/translate"
-	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // referenceGrantsCRD is extracted from Gateway API v1.5.1 standard-install.yaml:
@@ -28,7 +28,7 @@ func CreateReferenceGrantMapper(ctx *synccontext.RegisterContext) (synccontext.M
 		return nil, err
 	}
 
-	return generic.NewMapper(ctx, &gatewayv1.ReferenceGrant{}, translate.Default.HostName)
+	return generic.NewMapper(ctx, &gatewayv1beta1.ReferenceGrant{}, translate.Default.HostName)
 }
 
 // EnsureReferenceGrantCRD installs the ReferenceGrant CRD in the virtual

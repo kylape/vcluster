@@ -5,6 +5,7 @@ import (
 	"maps"
 	"sync"
 
+	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	"github.com/loft-sh/vcluster/pkg/scheme"
 	"github.com/loft-sh/vcluster/pkg/syncer/synccontext"
 	corev1 "k8s.io/api/core/v1"
@@ -159,7 +160,7 @@ func BackendTLSPolicies() schema.GroupVersionKind {
 }
 
 func ReferenceGrants() schema.GroupVersionKind {
-	return gatewayGVK("ReferenceGrant")
+	return gatewayv1beta1.GroupVersion.WithKind("ReferenceGrant")
 }
 
 func GatewayClasses() schema.GroupVersionKind {

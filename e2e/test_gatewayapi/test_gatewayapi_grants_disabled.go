@@ -5,6 +5,7 @@ import (
 
 	"github.com/loft-sh/vcluster/e2e/constants"
 	"github.com/loft-sh/vcluster/e2e/labels"
+	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	"github.com/loft-sh/vcluster/pkg/util/random"
 	"github.com/loft-sh/vcluster/pkg/util/translate"
 	. "github.com/onsi/ginkgo/v2"
@@ -101,7 +102,7 @@ func GatewayAPIGrantsDisabledSpec() {
 
 			var hostRouteName string
 			var route *gatewayv1.HTTPRoute
-			var grant *gatewayv1.ReferenceGrant
+			var grant *gatewayv1beta1.ReferenceGrant
 
 			By("creating a route whose backendRef crosses into another namespace and expecting no host sync", func() {
 				route = crossNamespaceRoute(frontend.Name, "route-rgd-xns-"+suffix, gw.Name, backend.Name, svc.Name)
@@ -122,14 +123,14 @@ func GatewayAPIGrantsDisabledSpec() {
 				// with grant sync disabled — virtual grants still govern
 				// cross-namespace authorization.
 				Eventually(func(g Gomega) {
-					g.Expect(vClusterClient.List(ctx, &gatewayv1.ReferenceGrantList{}, ctrlclient.InNamespace(backend.Name))).To(Succeed())
+					g.Expect(vClusterClient.List(ctx, &gatewayv1beta1.ReferenceGrantList{}, ctrlclient.InNamespace(backend.Name))).To(Succeed())
 				}).WithPolling(constants.PollingInterval).WithTimeout(constants.PollingTimeout).Should(Succeed())
 
-				grant = &gatewayv1.ReferenceGrant{
+				grant = &gatewayv1beta1.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{Name: "allow-rgd-" + suffix, Namespace: backend.Name},
-					Spec: gatewayv1.ReferenceGrantSpec{
-						From: []gatewayv1.ReferenceGrantFrom{{Group: gatewayv1.GroupName, Kind: "HTTPRoute", Namespace: gatewayv1.Namespace(frontend.Name)}},
-						To:   []gatewayv1.ReferenceGrantTo{{Group: "", Kind: "Service"}},
+					Spec: gatewayv1beta1.ReferenceGrantSpec{
+						From: []gatewayv1beta1.ReferenceGrantFrom{{Group: gatewayv1.GroupName, Kind: "HTTPRoute", Namespace: gatewayv1.Namespace(frontend.Name)}},
+						To:   []gatewayv1beta1.ReferenceGrantTo{{Group: "", Kind: "Service"}},
 					},
 				}
 				Expect(vClusterClient.Create(ctx, grant)).To(Succeed())
@@ -144,7 +145,7 @@ func GatewayAPIGrantsDisabledSpec() {
 			By("expecting the virtual ReferenceGrant to never sync to the host", func() {
 				hostGrantName := translate.SafeConcatName(grant.Name, "x", backend.Name, "x", vClusterName)
 				Consistently(func(g Gomega) {
-					err := hostClient.Get(ctx, types.NamespacedName{Namespace: vClusterHostNS, Name: hostGrantName}, &gatewayv1.ReferenceGrant{})
+					err := hostClient.Get(ctx, types.NamespacedName{Namespace: vClusterHostNS, Name: hostGrantName}, &gatewayv1beta1.ReferenceGrant{})
 					g.Expect(kerrors.IsNotFound(err)).To(BeTrue(), "host grant %s should not exist with grant sync disabled, got error: %v", hostGrantName, err)
 				}).WithPolling(constants.PollingInterval).WithTimeout(constants.PollingTimeoutShort).Should(Succeed())
 			})
