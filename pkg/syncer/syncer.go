@@ -56,6 +56,7 @@ func NewSyncController(ctx *synccontext.RegisterContext, syncer syncertypes.Sync
 		log:            loghelper.New(syncer.Name()),
 		vEventRecorder: ctx.VirtualManager.GetEventRecorder(syncer.Name() + "-syncer"),
 		physicalClient: ctx.HostManager.GetClient(),
+		physicalReader: ctx.HostManager.GetClient(),
 
 		currentNamespace:       ctx.CurrentNamespace,
 		currentNamespaceClient: ctx.CurrentNamespaceClient,
@@ -102,6 +103,7 @@ type SyncController struct {
 	vEventRecorder events.EventRecorder
 
 	physicalClient client.Client
+	physicalReader client.Reader
 
 	currentNamespace       string
 	currentNamespaceClient client.Client
@@ -361,7 +363,11 @@ func (r *SyncController) getPhysicalObject(ctx *synccontext.SyncContext, req typ
 
 	// get physical resource
 	pObj := r.syncer.Resource()
-	err := r.physicalClient.Get(ctx, req, pObj)
+	physicalReader := r.physicalReader
+	if physicalReader == nil {
+		physicalReader = r.physicalClient
+	}
+	err := physicalReader.Get(ctx, req, pObj)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return false, nil, fmt.Errorf("get physical object: %w", err)
@@ -491,6 +497,11 @@ func (r *SyncController) Build(ctx *synccontext.RegisterContext) (controller.Con
 		controllerBuilder, err = modifier.ModifyController(ctx, controllerBuilder)
 		if err != nil {
 			return nil, err
+		}
+	}
+	if readerProvider, ok := r.syncer.(syncertypes.PhysicalReaderProvider); ok {
+		if reader := readerProvider.PhysicalReader(); reader != nil {
+			r.physicalReader = reader
 		}
 	}
 

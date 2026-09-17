@@ -43,6 +43,7 @@ type csistoragecapacitySyncer struct {
 	synccontext.Mapper
 	hostClient                  client.Client
 	physicalEnqueue             syncertypes.PhysicalEnqueueFunc
+	physicalReader              client.Reader
 	storageClassSyncEnabled     bool
 	hostStorageClassSyncEnabled bool
 }
@@ -55,6 +56,10 @@ func (s *csistoragecapacitySyncer) Name() string {
 
 func (s *csistoragecapacitySyncer) SetPhysicalEnqueuer(enqueue syncertypes.PhysicalEnqueueFunc) {
 	s.physicalEnqueue = enqueue
+}
+
+func (s *csistoragecapacitySyncer) PhysicalReader() client.Reader {
+	return s.physicalReader
 }
 
 func (s *csistoragecapacitySyncer) Resource() client.Object {
@@ -137,6 +142,7 @@ func (s *csistoragecapacitySyncer) ModifyController(ctx *synccontext.RegisterCon
 	if err := ctx.HostManager.Add(allNSCache); err != nil {
 		return nil, fmt.Errorf("failed to add allNSCache to physical manager: %w", err)
 	}
+	s.physicalReader = allNSCache
 	hostCapacities := &storagev1.CSIStorageCapacityList{}
 	if err := ctx.HostManager.GetAPIReader().List(ctx, hostCapacities); err != nil {
 		klog.Warningf("CSI capacity direct host list failed after cache registration: %v", err)

@@ -75,6 +75,12 @@ type PhysicalEnqueuer interface {
 
 type PhysicalEnqueueFunc func(context.Context, client.Object, workqueue.TypedRateLimitingInterface[ctrl.Request], bool)
 
+// PhysicalReaderProvider allows a controller modifier to provide the cache
+// that backs its custom host event source for subsequent object lookups.
+type PhysicalReaderProvider interface {
+	PhysicalReader() client.Reader
+}
+
 // ControllerStarter is a generic controller that can be used if the syncer abstraction does not fit
 // the use case
 type ControllerStarter interface {
