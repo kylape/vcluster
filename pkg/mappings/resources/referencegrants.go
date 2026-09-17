@@ -2,6 +2,7 @@ package resources
 
 import (
 	_ "embed"
+	"fmt"
 
 	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	"github.com/loft-sh/vcluster/pkg/mappings"
@@ -37,5 +38,22 @@ func CreateReferenceGrantMapper(ctx *synccontext.RegisterContext) (synccontext.M
 // route mappers ensure the CRD independently of
 // sync.toHost.gatewayApi.referenceGrants.enabled.
 func EnsureReferenceGrantCRD(ctx *synccontext.RegisterContext) error {
-	return util.EnsureCRD(ctx.Context, ctx.VirtualManager.GetConfig(), []byte(referenceGrantsCRD), mappings.ReferenceGrants())
+	if ctx.VirtualManager == nil || ctx.VirtualManager.GetConfig() == nil {
+		return fmt.Errorf("cannot check virtual cluster for Gateway API resource %s: virtual manager is not configured", mappings.ReferenceGrants().String())
+	}
+
+	gvk := mappings.ReferenceGrants()
+	if err := util.EnsureCRD(ctx.Context, ctx.VirtualManager.GetConfig(), []byte(referenceGrantsCRD), gvk); err != nil {
+		return err
+	}
+
+	exists, err := util.KindExists(ctx.VirtualManager.GetConfig(), gvk)
+	if err != nil {
+		return fmt.Errorf("check virtual cluster for Gateway API resource %s: %w", gvk.String(), err)
+	}
+	if !exists {
+		return fmt.Errorf("virtual cluster does not advertise Gateway API resource %s after CRD installation; verify that this version is served", gvk.String())
+	}
+
+	return nil
 }

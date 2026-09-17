@@ -79,3 +79,29 @@ func TestRouteMappersEnsureReferenceGrantCRDWhenGrantSyncDisabled(t *testing.T) 
 		t.Fatalf("route mappers must ensure the tenant ReferenceGrant CRD even with grant sync disabled; route controllers watch virtual ReferenceGrants for cross-namespace authorization")
 	}
 }
+
+func TestEnsureReferenceGrantCRDChecksVirtualServedVersion(t *testing.T) {
+	restoreEnsureCRD := util.EnsureCRD
+	restoreKindExists := util.KindExists
+	util.EnsureCRD = func(_ context.Context, _ *rest.Config, _ []byte, _ schema.GroupVersionKind) error {
+		return nil
+	}
+	util.KindExists = func(_ *rest.Config, gvk schema.GroupVersionKind) (bool, error) {
+		return gvk != mappings.ReferenceGrants(), nil
+	}
+	t.Cleanup(func() {
+		util.EnsureCRD = restoreEnsureCRD
+		util.KindExists = restoreKindExists
+	})
+
+	fakeClient := testingutil.NewFakeClient(scheme.Scheme)
+	ctx := &synccontext.RegisterContext{
+		Context:        context.Background(),
+		VirtualManager: testingutil.NewFakeManager(fakeClient),
+	}
+
+	err := EnsureReferenceGrantCRD(ctx)
+	if err == nil || !strings.Contains(err.Error(), "does not advertise Gateway API resource gateway.networking.k8s.io/v1beta1, Kind=ReferenceGrant") {
+		t.Fatalf("expected missing served ReferenceGrant version to fail fast, got %v", err)
+	}
+}
