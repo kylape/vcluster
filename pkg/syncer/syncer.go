@@ -504,6 +504,9 @@ func (r *SyncController) Register(ctx *synccontext.RegisterContext) error {
 			return fmt.Errorf("start object cache: %w", err)
 		}
 	}
+	if enqueuer, ok := r.syncer.(syncertypes.PhysicalEnqueuer); ok {
+		enqueuer.SetPhysicalEnqueuer(r.enqueuePhysical)
+	}
 
 	_, err := r.Build(ctx)
 	return err

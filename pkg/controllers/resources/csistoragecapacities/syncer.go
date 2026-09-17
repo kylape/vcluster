@@ -42,6 +42,7 @@ func New(ctx *synccontext.RegisterContext) (syncertypes.Object, error) {
 type csistoragecapacitySyncer struct {
 	synccontext.Mapper
 	hostClient                  client.Client
+	physicalEnqueue             syncertypes.PhysicalEnqueueFunc
 	storageClassSyncEnabled     bool
 	hostStorageClassSyncEnabled bool
 }
@@ -50,6 +51,10 @@ var _ syncertypes.Syncer = &csistoragecapacitySyncer{}
 
 func (s *csistoragecapacitySyncer) Name() string {
 	return "csistoragecapacity"
+}
+
+func (s *csistoragecapacitySyncer) SetPhysicalEnqueuer(enqueue syncertypes.PhysicalEnqueueFunc) {
+	s.physicalEnqueue = enqueue
 }
 
 func (s *csistoragecapacitySyncer) Resource() client.Object {
@@ -144,30 +149,34 @@ func (s *csistoragecapacitySyncer) ModifyController(ctx *synccontext.RegisterCon
 	return builder.WatchesRawSource(source.Kind(allNSCache, s.Resource(), &handler.Funcs{
 		CreateFunc: func(_ context.Context, ce event.TypedCreateEvent[client.Object], rli workqueue.TypedRateLimitingInterface[ctrl.Request]) {
 			obj := ce.Object
-			s.enqueuePhysical(syncContext, obj, rli)
+			s.enqueuePhysical(syncContext, obj, rli, false)
 		},
 		UpdateFunc: func(_ context.Context, ue event.TypedUpdateEvent[client.Object], rli workqueue.TypedRateLimitingInterface[ctrl.Request]) {
 			obj := ue.ObjectNew
-			s.enqueuePhysical(syncContext, obj, rli)
+			s.enqueuePhysical(syncContext, obj, rli, false)
 		},
 		DeleteFunc: func(_ context.Context, de event.TypedDeleteEvent[client.Object], rli workqueue.TypedRateLimitingInterface[ctrl.Request]) {
 			obj := de.Object
-			s.enqueuePhysical(syncContext, obj, rli)
+			s.enqueuePhysical(syncContext, obj, rli, true)
 		},
 		GenericFunc: func(_ context.Context, ge event.TypedGenericEvent[client.Object], rli workqueue.TypedRateLimitingInterface[ctrl.Request]) {
 			obj := ge.Object
-			s.enqueuePhysical(syncContext, obj, rli)
+			s.enqueuePhysical(syncContext, obj, rli, false)
 		},
 	})), nil
 }
 
-func (s *csistoragecapacitySyncer) enqueuePhysical(ctx *synccontext.SyncContext, obj client.Object, q workqueue.TypedRateLimitingInterface[ctrl.Request]) {
+func (s *csistoragecapacitySyncer) enqueuePhysical(ctx *synccontext.SyncContext, obj client.Object, q workqueue.TypedRateLimitingInterface[ctrl.Request], isDelete bool) {
 	if obj == nil {
 		return
 	}
 
 	name := s.HostToVirtual(ctx, types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj)
 	ctx.Log.Infof("CSIStorageCapacity host cache event: host=%s/%s guest=%s/%s", obj.GetNamespace(), obj.GetName(), name.Namespace, name.Name)
+	if s.physicalEnqueue != nil {
+		s.physicalEnqueue(ctx, obj, q, isDelete)
+		return
+	}
 	if name.Name != "" && name.Namespace != "" {
 		q.Add(reconcile.Request{NamespacedName: name})
 	}

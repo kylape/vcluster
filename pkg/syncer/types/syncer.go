@@ -1,8 +1,11 @@
 package types
 
 import (
+	"context"
+
 	"github.com/loft-sh/vcluster/pkg/syncer/synccontext"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,6 +65,15 @@ type IndicesRegisterer interface {
 type ControllerModifier interface {
 	ModifyController(ctx *synccontext.RegisterContext, builder *builder.Builder) (*builder.Builder, error)
 }
+
+// PhysicalEnqueuer allows a controller modifier that watches a custom host
+// cache to reuse the generic host-event handling. This preserves the original
+// host request while queueing the translated virtual request.
+type PhysicalEnqueuer interface {
+	SetPhysicalEnqueuer(PhysicalEnqueueFunc)
+}
+
+type PhysicalEnqueueFunc func(context.Context, client.Object, workqueue.TypedRateLimitingInterface[ctrl.Request], bool)
 
 // ControllerStarter is a generic controller that can be used if the syncer abstraction does not fit
 // the use case
