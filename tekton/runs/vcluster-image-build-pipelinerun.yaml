@@ -9,11 +9,13 @@ spec:
     serviceAccountName: vcluster-buildah
   params:
     - name: revision
-      value: codex/csi-capacity-tracing
+      value: combined
     - name: image
       value: quay.io/klape/vcluster:csi-capacity-debug
     - name: build-version
-      value: csi-capacity-debug
+      value: csi-capacity-debug-combined
+    - name: chart-version
+      value: 0.0.1-combined.1
   workspaces:
     - name: source
       emptyDir: {}
