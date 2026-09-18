@@ -17,6 +17,12 @@ spec:
     - name: build-version
       type: string
       default: csi-capacity-debug
+    - name: chart-repository
+      type: string
+      default: oci://quay.io/klape/charts
+    - name: chart-version
+      type: string
+      default: 0.0.1
   workspaces:
     - name: source
     - name: registry-auth
@@ -25,6 +31,8 @@ spec:
       value: $(tasks.build.results.image-url)
     - name: image-digest
       value: $(tasks.build.results.image-digest)
+    - name: chart-url
+      value: $(tasks.build.results.chart-url)
   tasks:
     - name: build
       taskRef:
@@ -38,6 +46,10 @@ spec:
           value: $(params.image)
         - name: build-version
           value: $(params.build-version)
+        - name: chart-repository
+          value: $(params.chart-repository)
+        - name: chart-version
+          value: $(params.chart-version)
       workspaces:
         - name: source
           workspace: source
