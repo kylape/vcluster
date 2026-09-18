@@ -356,6 +356,12 @@ Together they provide the full stack for an AI factory: certified Kubernetes, is
 
 ---
 
+## Infra sandbox integration
+
+The patched image and OCI chart are consumed by the Infra-backed vCluster
+sandbox. The build contract and validation handoff are documented in
+[docs/infra-provider-build.md](docs/infra-provider-build.md).
+
 ## 🤝 Contributing
 
 We welcome contributions. Check out the **[contributing guide](https://github.com/loft-sh/vcluster/blob/main/CONTRIBUTING.md)** to get started.
