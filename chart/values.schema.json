@@ -899,6 +899,15 @@
     },
     "ControlPlaneSecurity": {
       "properties": {
+        "profile": {
+          "type": "string",
+          "enum": [
+            "",
+            "legacy",
+            "restricted"
+          ],
+          "description": "Profile selects the security baseline. Empty inherits the control-plane profile; restricted is compatible with Kubernetes restricted Pod Security and OpenShift restricted-v3 when the image and volumes support arbitrary UIDs."
+        },
         "podSecurityContext": {
           "type": "object",
           "description": "PodSecurityContext specifies security context options on the pod level."

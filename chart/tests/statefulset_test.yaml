@@ -1363,3 +1363,52 @@ tests:
           value: 0
       - notExists:
           path: spec.template.spec.containers[0].securityContext.capabilities
+
+  - it: should render the restricted security profile for the pod, init container, and syncer
+    set:
+      controlPlane:
+        statefulSet:
+          security:
+            profile: restricted
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - contains:
+          path: spec.template.spec.initContainers[0].securityContext.capabilities.drop
+          content: ALL
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - contains:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop
+          content: ALL
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext.runAsGroup
+
+  - it: should reject kube-vip with the restricted security profile
+    set:
+      controlPlane:
+        advanced:
+          kubeVip:
+            enabled: true
+        statefulSet:
+          security:
+            profile: restricted
+    asserts:
+      - failedTemplate:
+          errorMessage: "controlPlane.advanced.kubeVip.enabled is incompatible with the restricted security profile because kube-vip requires NET_ADMIN and NET_RAW"
