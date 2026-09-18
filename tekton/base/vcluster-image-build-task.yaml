@@ -15,12 +15,19 @@ spec:
     - name: build-version
       type: string
       default: csi-capacity-debug
+    - name: chart-repository
+      type: string
+      default: oci://quay.io/klape/charts
+    - name: chart-version
+      type: string
+      default: 0.0.1
   workspaces:
     - name: source
     - name: registry-auth
   results:
     - name: image-url
     - name: image-digest
+    - name: chart-url
   steps:
     - name: clone
       image: alpine/git:2.47.2
@@ -76,3 +83,29 @@ spec:
           "${image}" \
           "docker://${image}"
         printf '%s' "${image}" > "$(results.image-url.path)"
+    - name: package-and-push-chart
+      image: alpine/helm:3.19.0
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/sh
+        set -eu
+
+        apk add --no-cache ca-certificates
+        authfile="$(workspaces.registry-auth.path)/.dockerconfigjson"
+        if [ ! -s "${authfile}" ]; then
+          echo "registry-auth workspace must contain .dockerconfigjson" >&2
+          exit 1
+        fi
+
+        export HELM_REGISTRY_CONFIG="${authfile}"
+        package_dir=/tmp/vcluster-chart
+        rm -rf "${package_dir}"
+        mkdir -p "${package_dir}"
+        helm package source/chart \
+          --version "$(params.chart-version)" \
+          --destination "${package_dir}"
+        chart_package="${package_dir}/vcluster-$(params.chart-version).tgz"
+        helm push "${chart_package}" "$(params.chart-repository)"
+        printf '%s/vcluster:%s' \
+          "$(params.chart-repository)" "$(params.chart-version)" \
+          > "$(results.chart-url.path)"
