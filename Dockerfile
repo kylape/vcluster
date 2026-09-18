@@ -50,11 +50,14 @@ RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
 
 ENTRYPOINT ["go", "run", "-mod", "vendor", "cmd/vcluster/main.go", "start"]
 
-# we use alpine for easier debugging
-FROM docker.io/library/alpine:3.24
+# Use Red Hat UBI for the runtime image so the published image has a Red Hat
+# supported base and can run under OpenShift security policies.
+FROM registry.access.redhat.com/ubi9-minimal:latest
 
 # install runtime dependencies
-RUN apk upgrade --no-cache zlib && apk add --no-cache ca-certificates zstd tzdata
+RUN microdnf install -y ca-certificates zstd tzdata \
+    && microdnf clean all \
+    && rm -rf /var/cache/yum
 
 # Set root path as working directory
 WORKDIR /
