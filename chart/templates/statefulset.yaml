@@ -2,6 +2,7 @@
 {{- include "vcluster.legacy.volumeSnapshots.validate" . }}
 {{- include "vcluster.kubeVirtCSI.validate" . }}
 {{- include "vcluster.fileLogging.validate" . }}
+{{- include "vcluster.security.validate" . }}
 apiVersion: apps/v1
 kind: {{ include "vcluster.kind" . }}
 metadata:
@@ -70,9 +71,9 @@ spec:
       {{- if .Values.controlPlane.statefulSet.scheduling.priorityClassName }}
       priorityClassName: {{ .Values.controlPlane.statefulSet.scheduling.priorityClassName }}
       {{- end }}
-      {{- if .Values.controlPlane.statefulSet.security.podSecurityContext }}
+      {{- if or .Values.controlPlane.statefulSet.security.podSecurityContext (eq (include "vcluster.securityProfile" .) "restricted") }}
       securityContext:
-{{ toYaml .Values.controlPlane.statefulSet.security.podSecurityContext | indent 8 }}
+{{ include "vcluster.securityContext" (dict "profile" (include "vcluster.securityProfile" .) "context" .Values.controlPlane.statefulSet.security.podSecurityContext "container" false) | indent 8 }}
       {{- end }}
       {{- if .Values.controlPlane.statefulSet.scheduling.nodeSelector }}
       nodeSelector:
@@ -182,9 +183,9 @@ spec:
             timeoutSeconds: {{ .Values.controlPlane.statefulSet.probes.startupProbe.timeoutSeconds }}
             failureThreshold: {{ .Values.controlPlane.statefulSet.probes.startupProbe.failureThreshold }}
           {{- end }}
-          {{- if or .Values.controlPlane.statefulSet.security.containerSecurityContext .Values.controlPlane.advanced.kubeVip.enabled }}
+          {{- if or .Values.controlPlane.statefulSet.security.containerSecurityContext .Values.controlPlane.advanced.kubeVip.enabled (eq (include "vcluster.securityProfile" .) "restricted") }}
           securityContext:
-            {{- $securityContext := merge .Values.controlPlane.statefulSet.security.containerSecurityContext dict }}
+            {{- $securityContext := fromYaml (include "vcluster.securityContext" (dict "profile" (include "vcluster.securityProfile" .) "context" .Values.controlPlane.statefulSet.security.containerSecurityContext "container" true)) }}
             {{- if .Values.controlPlane.advanced.kubeVip.enabled }}
               {{- $_ := set $securityContext "capabilities" ($securityContext.capabilities | default dict) }}
               {{- $existingCaps := $securityContext.capabilities.add | default list }}
