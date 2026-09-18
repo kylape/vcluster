@@ -61,6 +61,10 @@ WORKDIR /
 
 COPY --from=builder /vcluster .
 
+# OpenShift may assign an arbitrary non-root UID. Runtime code must use a
+# writable home directory rather than assuming /root is available.
+ENV HOME=/tmp
+
 # RUN useradd -u 12345 nonroot
 # USER nonroot
 
