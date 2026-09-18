@@ -519,10 +519,6 @@ controlPlane:
     priorityClassName: ""
     # Security defines pod or container security context.
     security:
-      # Profile selects the security baseline. Legacy preserves existing behavior;
-      # restricted is compatible with Kubernetes restricted Pod Security and
-      # OpenShift restricted-v3 when the image and volumes support arbitrary UIDs.
-      profile: legacy
       # PodSecurityContext specifies security context options on the pod level.
       podSecurityContext: {}
       # ContainerSecurityContext specifies security context options on the container level.
@@ -683,6 +679,10 @@ controlPlane:
       retryPeriod: 15
     # Security defines pod or container security context.
     security:
+      # Profile controls the security baseline. Legacy preserves existing behavior;
+      # restricted is compatible with Kubernetes restricted Pod Security and
+      # OpenShift restricted-v3 when the image and volumes support arbitrary UIDs.
+      profile: legacy
       # PodSecurityContext specifies security context options on the pod level.
       podSecurityContext: {}
       # ContainerSecurityContext specifies security context options on the container level.
