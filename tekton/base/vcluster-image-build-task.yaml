@@ -9,7 +9,7 @@ spec:
       type: string
     - name: revision
       type: string
-      default: main
+      default: combined
     - name: image
       type: string
     - name: build-version
