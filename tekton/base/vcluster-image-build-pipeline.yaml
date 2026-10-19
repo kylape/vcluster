@@ -10,7 +10,7 @@ spec:
       default: https://github.com/kylape/vcluster.git
     - name: revision
       type: string
-      default: main
+      default: combined
     - name: image
       type: string
       default: quay.io/klape/vcluster:csi-capacity-debug
