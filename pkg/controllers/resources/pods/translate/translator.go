@@ -260,6 +260,7 @@ func (t *translator) Translate(ctx *synccontext.SyncContext, vPod *corev1.Pod, s
 	if pPod.Annotations == nil {
 		pPod.Annotations = map[string]string{}
 	}
+	recordGuestSchedulingGates(pPod, vPod)
 	if vPod.Annotations != nil {
 		pPod.Annotations[NamespaceAnnotation] = vPod.Annotations[NamespaceAnnotation]
 		pPod.Annotations[NameAnnotation] = vPod.Annotations[NameAnnotation]
