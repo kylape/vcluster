@@ -104,7 +104,7 @@ func (t *translator) Diff(ctx *synccontext.SyncContext, event *synccontext.SyncE
 }
 
 func GetExcludedAnnotations(pPod *corev1.Pod) []string {
-	annotations := []string{ClusterAutoScalerAnnotation, OwnerReferences, OwnerSetKind, NamespaceAnnotation, NameAnnotation, UIDAnnotation, ServiceAccountNameAnnotation, HostsRewrittenAnnotation, VClusterLabelsAnnotation}
+	annotations := []string{ClusterAutoScalerAnnotation, OwnerReferences, OwnerSetKind, NamespaceAnnotation, NameAnnotation, UIDAnnotation, ServiceAccountNameAnnotation, HostsRewrittenAnnotation, VClusterLabelsAnnotation, GuestSchedulingGatesAnnotation}
 	if pPod != nil {
 		for _, v := range pPod.Spec.Volumes {
 			if v.Projected != nil {
@@ -160,7 +160,7 @@ func (t *translator) calcSpecDiff(pObj, vObj *corev1.Pod) {
 		pObj.Spec.InitContainers = updatedContainer
 	}
 
-	pObj.Spec.SchedulingGates = vObj.Spec.SchedulingGates
+	syncSchedulingGates(pObj, vObj)
 
 	newTolerations := append([]corev1.Toleration{}, vObj.Spec.Tolerations...)
 	for _, hostTol := range pObj.Spec.Tolerations {
