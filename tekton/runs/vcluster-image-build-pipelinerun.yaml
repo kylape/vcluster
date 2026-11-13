@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: vcluster-image-build-csi-capacity-debug-v16
+spec:
+  pipelineRef:
+    name: vcluster-image-build
+  taskRunTemplate:
+    serviceAccountName: vcluster-buildah
+  params:
+    - name: revision
+      value: combined
+    - name: image
+      value: quay.io/klape/vcluster:csi-capacity-debug
+    - name: build-version
+      value: csi-capacity-debug-combined
+    - name: chart-version
+      value: 0.0.1-combined.1
+  workspaces:
+    - name: source
+      emptyDir: {}
+    - name: registry-auth
+      secret:
+        secretName: infra-vcluster-registry-auth

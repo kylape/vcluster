@@ -5,6 +5,7 @@ import (
 
 	"github.com/loft-sh/vcluster/e2e/constants"
 	"github.com/loft-sh/vcluster/e2e/labels"
+	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	"github.com/loft-sh/vcluster/pkg/util/random"
 	"github.com/loft-sh/vcluster/pkg/util/translate"
 	. "github.com/onsi/ginkgo/v2"
@@ -65,7 +66,7 @@ func GatewayAPIToHostSpec() {
 			Expect(vClusterClient.Create(ctx, svc)).To(Succeed())
 			var hostRouteName string
 			var route *gatewayv1.HTTPRoute
-			var grant *gatewayv1.ReferenceGrant
+			var grant *gatewayv1beta1.ReferenceGrant
 
 			By("creating a route whose backendRef crosses into another namespace", func() {
 				route = crossNamespaceRoute(frontend.Name, "route-"+suffix, gw.Name, backend.Name, svc.Name)
@@ -81,11 +82,11 @@ func GatewayAPIToHostSpec() {
 				}).WithPolling(constants.PollingInterval).WithTimeout(constants.PollingTimeoutShort).Should(Succeed())
 			})
 			By("creating a ReferenceGrant in the backend namespace and expecting the route to sync", func() {
-				grant = &gatewayv1.ReferenceGrant{
+				grant = &gatewayv1beta1.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{Name: "allow-" + suffix, Namespace: backend.Name},
-					Spec: gatewayv1.ReferenceGrantSpec{
-						From: []gatewayv1.ReferenceGrantFrom{{Group: gatewayv1.GroupName, Kind: "HTTPRoute", Namespace: gatewayv1.Namespace(frontend.Name)}},
-						To:   []gatewayv1.ReferenceGrantTo{{Group: "", Kind: "Service"}},
+					Spec: gatewayv1beta1.ReferenceGrantSpec{
+						From: []gatewayv1beta1.ReferenceGrantFrom{{Group: gatewayv1.GroupName, Kind: "HTTPRoute", Namespace: gatewayv1.Namespace(frontend.Name)}},
+						To:   []gatewayv1beta1.ReferenceGrantTo{{Group: "", Kind: "Service"}},
 					},
 				}
 				Expect(vClusterClient.Create(ctx, grant)).To(Succeed())

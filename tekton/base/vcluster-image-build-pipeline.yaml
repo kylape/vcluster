@@ -1,0 +1,57 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: vcluster-image-build
+spec:
+  description: Build and publish a vCluster image from the personal fork.
+  params:
+    - name: git-url
+      type: string
+      default: https://github.com/kylape/vcluster.git
+    - name: revision
+      type: string
+      default: combined
+    - name: image
+      type: string
+      default: quay.io/klape/vcluster:csi-capacity-debug
+    - name: build-version
+      type: string
+      default: csi-capacity-debug
+    - name: chart-repository
+      type: string
+      default: oci://quay.io/klape/charts
+    - name: chart-version
+      type: string
+      default: 0.0.1
+  workspaces:
+    - name: source
+    - name: registry-auth
+  results:
+    - name: image-url
+      value: $(tasks.build.results.image-url)
+    - name: image-digest
+      value: $(tasks.build.results.image-digest)
+    - name: chart-url
+      value: $(tasks.build.results.chart-url)
+  tasks:
+    - name: build
+      taskRef:
+        name: vcluster-image-build
+      params:
+        - name: git-url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.revision)
+        - name: image
+          value: $(params.image)
+        - name: build-version
+          value: $(params.build-version)
+        - name: chart-repository
+          value: $(params.chart-repository)
+        - name: chart-version
+          value: $(params.chart-version)
+      workspaces:
+        - name: source
+          workspace: source
+        - name: registry-auth
+          workspace: registry-auth

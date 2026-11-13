@@ -50,16 +50,23 @@ RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
 
 ENTRYPOINT ["go", "run", "-mod", "vendor", "cmd/vcluster/main.go", "start"]
 
-# we use alpine for easier debugging
-FROM alpine:3.24
+# Use Red Hat UBI for the runtime image so the published image has a Red Hat
+# supported base and can run under OpenShift security policies.
+FROM registry.access.redhat.com/ubi9-minimal:latest
 
 # install runtime dependencies
-RUN apk update && apk upgrade --no-cache && apk add --no-cache ca-certificates zstd tzdata
+RUN microdnf install -y ca-certificates zstd tzdata \
+    && microdnf clean all \
+    && rm -rf /var/cache/yum
 
 # Set root path as working directory
 WORKDIR /
 
 COPY --from=builder /vcluster .
+
+# OpenShift may assign an arbitrary non-root UID. Runtime code must use a
+# writable home directory rather than assuming /root is available.
+ENV HOME=/tmp
 
 # RUN useradd -u 12345 nonroot
 # USER nonroot

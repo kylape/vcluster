@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	pkgconfig "github.com/loft-sh/vcluster/pkg/config"
 	"github.com/loft-sh/vcluster/pkg/scheme"
 	syncertesting "github.com/loft-sh/vcluster/pkg/syncer/testing"
@@ -191,7 +192,7 @@ func TestReferenceGrantToHostTranslatesNamedServiceTarget(t *testing.T) {
 		t.Fatalf("create managed host Service: %v", err)
 	}
 
-	ref := gatewayv1.ReferenceGrantTo{Group: gatewayv1.Group(corev1.GroupName), Kind: gatewayv1.Kind("Service"), Name: ptr.To(gatewayv1.ObjectName("api"))}
+	ref := gatewayv1beta1.ReferenceGrantTo{Group: gatewayv1beta1.Group(corev1.GroupName), Kind: gatewayv1beta1.Kind("Service"), Name: ptr.To(gatewayv1beta1.ObjectName("api"))}
 	if err := ReferenceGrantToHost(syncCtx, "team-a", &ref); err != nil {
 		t.Fatalf("expected ReferenceGrant target to translate: %v", err)
 	}

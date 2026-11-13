@@ -1,6 +1,7 @@
 {{- if or .Values.controlPlane.backingStore.etcd.deploy.enabled (include "vcluster.etcd.embedded.migrate" .) }}
 {{- if .Values.controlPlane.backingStore.etcd.deploy.statefulSet.enabled }}
 {{- $externalEtcd := .Values.controlPlane.backingStore.etcd.deploy.statefulSet }}
+{{- $securityProfile := .Values.controlPlane.backingStore.etcd.deploy.statefulSet.security.profile | default (include "vcluster.securityProfile" .) -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -127,9 +128,9 @@ spec:
       {{- if $externalEtcd.scheduling.priorityClassName }}
       priorityClassName: {{ $externalEtcd.scheduling.priorityClassName }}
       {{- end }}
-      {{- if $externalEtcd.security.podSecurityContext }}
+      {{- if or $externalEtcd.security.podSecurityContext (eq $securityProfile "restricted") }}
       securityContext:
-{{ toYaml $externalEtcd.security.podSecurityContext | indent 8 }}
+{{ include "vcluster.securityContext" (dict "profile" $securityProfile "context" $externalEtcd.security.podSecurityContext "container" false) | indent 8 }}
       {{- end }}
       enableServiceLinks: {{ .Values.controlPlane.backingStore.etcd.deploy.statefulSet.enableServiceLinks }}
       containers:
@@ -161,9 +162,9 @@ spec:
           {{- range $f := $externalEtcd.extraArgs }}
           - {{ $f | quote }}
           {{- end }}
-        {{- if $externalEtcd.security.containerSecurityContext }}
+        {{- if or $externalEtcd.security.containerSecurityContext (eq $securityProfile "restricted") }}
         securityContext:
-{{ toYaml $externalEtcd.security.containerSecurityContext | indent 10 }}
+{{ include "vcluster.securityContext" (dict "profile" $securityProfile "context" $externalEtcd.security.containerSecurityContext "container" true) | indent 10 }}
         {{- end }}
         env:
           - name: NAME

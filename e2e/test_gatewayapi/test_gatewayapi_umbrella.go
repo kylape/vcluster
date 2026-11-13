@@ -5,6 +5,7 @@ import (
 
 	"github.com/loft-sh/vcluster/e2e/constants"
 	"github.com/loft-sh/vcluster/e2e/labels"
+	gatewayv1beta1 "github.com/loft-sh/vcluster/pkg/apis/gateway/v1beta1"
 	"github.com/loft-sh/vcluster/pkg/util/random"
 	"github.com/loft-sh/vcluster/pkg/util/translate"
 	. "github.com/onsi/ginkgo/v2"
@@ -47,7 +48,7 @@ func GatewayAPIUmbrellaSpec() {
 				g.Expect(vClusterClient.List(ctx, &gatewayv1.GatewayClassList{})).To(Succeed())
 				g.Expect(vClusterClient.List(ctx, &gatewayv1.GatewayList{}, ctrlclient.InNamespace("default"))).To(Succeed())
 				g.Expect(vClusterClient.List(ctx, &gatewayv1.HTTPRouteList{}, ctrlclient.InNamespace("default"))).To(Succeed())
-				g.Expect(vClusterClient.List(ctx, &gatewayv1.ReferenceGrantList{}, ctrlclient.InNamespace("default"))).To(Succeed())
+				g.Expect(vClusterClient.List(ctx, &gatewayv1beta1.ReferenceGrantList{}, ctrlclient.InNamespace("default"))).To(Succeed())
 			}).WithPolling(constants.PollingInterval).WithTimeout(constants.PollingTimeout).Should(Succeed())
 		})
 
@@ -139,11 +140,11 @@ func GatewayAPIUmbrellaSpec() {
 			})
 
 			By("creating a tenant ReferenceGrant and expecting the route to sync while the grant stays virtual", func() {
-				grant := &gatewayv1.ReferenceGrant{
+				grant := &gatewayv1beta1.ReferenceGrant{
 					ObjectMeta: metav1.ObjectMeta{Name: "allow-umbrella-" + suffix, Namespace: backend.Name},
-					Spec: gatewayv1.ReferenceGrantSpec{
-						From: []gatewayv1.ReferenceGrantFrom{{Group: gatewayv1.GroupName, Kind: "HTTPRoute", Namespace: gatewayv1.Namespace(frontend.Name)}},
-						To:   []gatewayv1.ReferenceGrantTo{{Group: "", Kind: "Service"}},
+					Spec: gatewayv1beta1.ReferenceGrantSpec{
+						From: []gatewayv1beta1.ReferenceGrantFrom{{Group: gatewayv1.GroupName, Kind: "HTTPRoute", Namespace: gatewayv1.Namespace(frontend.Name)}},
+						To:   []gatewayv1beta1.ReferenceGrantTo{{Group: "", Kind: "Service"}},
 					},
 				}
 				Expect(vClusterClient.Create(ctx, grant)).To(Succeed())
@@ -157,7 +158,7 @@ func GatewayAPIUmbrellaSpec() {
 
 				hostGrantName := translate.SafeConcatName(grant.Name, "x", backend.Name, "x", vClusterName)
 				Consistently(func(g Gomega) {
-					err := hostClient.Get(ctx, types.NamespacedName{Namespace: vClusterHostNS, Name: hostGrantName}, &gatewayv1.ReferenceGrant{})
+					err := hostClient.Get(ctx, types.NamespacedName{Namespace: vClusterHostNS, Name: hostGrantName}, &gatewayv1beta1.ReferenceGrant{})
 					g.Expect(kerrors.IsNotFound(err)).To(BeTrue())
 				}).WithPolling(constants.PollingInterval).WithTimeout(constants.PollingTimeoutShort).Should(Succeed())
 			})

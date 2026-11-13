@@ -33,7 +33,7 @@
   imagePullPolicy: {{ .Values.controlPlane.distro.k8s.imagePullPolicy }}
   {{- end }}
   securityContext:
-{{ toYaml .Values.controlPlane.distro.k8s.securityContext | indent 4 }}
+{{ include "vcluster.securityContext" (dict "profile" (include "vcluster.securityProfile" .) "context" .Values.controlPlane.distro.k8s.securityContext "container" true) | indent 4 }}
   resources:
 {{ toYaml .Values.controlPlane.distro.k8s.resources | indent 4 }}
 {{- if .Values.controlPlane.statefulSet.initContainers }}
