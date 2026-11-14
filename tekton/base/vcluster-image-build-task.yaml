@@ -14,13 +14,13 @@ spec:
       type: string
     - name: build-version
       type: string
-      default: csi-capacity-debug
+      default: 2026.11.13
     - name: chart-repository
       type: string
       default: oci://quay.io/klape/charts
     - name: chart-version
       type: string
-      default: 0.0.1
+      default: 0.0.1-2026.11.13
   workspaces:
     - name: source
     - name: registry-auth

@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: vcluster-image-build-csi-capacity-debug-v16
+  name: vcluster-image-build-2026.11.13
 spec:
   pipelineRef:
     name: vcluster-image-build
@@ -11,11 +11,11 @@ spec:
     - name: revision
       value: combined
     - name: image
-      value: quay.io/klape/vcluster:csi-capacity-debug
+      value: quay.io/klape/vcluster:2026.11.13
     - name: build-version
-      value: csi-capacity-debug-combined
+      value: 2026.11.13-combined
     - name: chart-version
-      value: 0.0.1-combined.1
+      value: 0.0.1-2026.11.13
   workspaces:
     - name: source
       emptyDir: {}
