@@ -1,5 +1,5 @@
 # Build program
-FROM golang:1.26 AS builder
+FROM docker.io/library/golang:1.26 AS builder
 
 WORKDIR /vcluster-dev
 ARG TARGETOS
