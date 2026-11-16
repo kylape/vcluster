@@ -49,9 +49,12 @@ ENV GOENV=/.config
 ENV HOME=/
 
 # Build cmd
+# Constrain Go build parallelism: the CI build environment limits threads
+# and processes per container, and an unconstrained build dies with
+# "fatal error: newosproc" (errno=11) when the compiler spawns workers.
 RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
 	--mount=type=cache,id=gobuild,target=/.cache/go-build \
-	CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on go build -mod vendor -ldflags "-X github.com/loft-sh/vcluster/pkg/telemetry.SyncerVersion=$BUILD_VERSION -X github.com/loft-sh/vcluster/pkg/telemetry.telemetryPrivateKey=$TELEMETRY_PRIVATE_KEY" -o /vcluster cmd/vcluster/main.go
+	GOMAXPROCS=4 CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on go build -p 4 -mod vendor -ldflags "-X github.com/loft-sh/vcluster/pkg/telemetry.SyncerVersion=$BUILD_VERSION -X github.com/loft-sh/vcluster/pkg/telemetry.telemetryPrivateKey=$TELEMETRY_PRIVATE_KEY" -o /vcluster cmd/vcluster/main.go
 
 # RUN useradd -u 12345 nonroot
 # USER nonroot
