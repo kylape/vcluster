@@ -1,5 +1,10 @@
 # Build program
-FROM docker.io/library/golang:1.26 AS builder
+# Use the Red Hat go-toolset builder so the build does not depend on Docker Hub
+# anonymous pull limits; it ships the Go version required by go.mod plus curl,
+# git, and tar. Run as root because the image defaults to an unprivileged UID
+# and the build writes to /usr/local/bin and the root cache directories.
+FROM registry.access.redhat.com/ubi9/go-toolset:1.26.10 AS builder
+USER root
 
 WORKDIR /vcluster-dev
 ARG TARGETOS
@@ -30,6 +35,9 @@ COPY config/ config/
 
 ENV GO111MODULE=on
 ENV DEBUG=true
+# go-toolset defaults GOPATH to /opt/app-root/src/go; pin it to /go so the
+# build cache mounts below keep targeting the module and build caches.
+ENV GOPATH=/go
 
 # create and set GOCACHE now, this should slightly speed up the first build inside of the container
 # also create /.config folder for GOENV, as dlv needs to write there when starting debugging
