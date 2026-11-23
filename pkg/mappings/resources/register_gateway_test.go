@@ -36,7 +36,7 @@ func TestGatewayMappersUseLatestVersions(t *testing.T) {
 	if got := mappings.BackendTLSPolicies().GroupVersion(); got != want {
 		t.Fatalf("expected BackendTLSPolicy mapper to use the latest version %s, got %s", want, got)
 	}
-	if got := mappings.ReferenceGrants().GroupVersion(); got != schema.GroupVersion(gatewayv1beta1.GroupVersion) {
+	if got := mappings.ReferenceGrants().GroupVersion(); got != gatewayv1beta1.GroupVersion {
 		t.Fatalf("expected ReferenceGrant mapper to use the latest version %s, got %s", want, got)
 	}
 }
